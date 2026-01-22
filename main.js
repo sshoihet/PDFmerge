@@ -51,10 +51,88 @@ function handleFiles(fileListObj) {
     checkReadyState();
 }
 
+// --- Updated Render Logic ---
+
+let dragStartIndex;
+
 function renderFileList() {
-    fileList.innerHTML = selectedFiles
-        .map((f, i) => `[${i}] ${f.name} (${(f.size/1024/1024).toFixed(2)} MB)`)
-        .join('<br>');
+    fileList.innerHTML = ''; // Clear current list
+
+    selectedFiles.forEach((file, index) => {
+        const item = document.createElement('div');
+        item.classList.add('file-item');
+        item.setAttribute('draggable', 'true');
+        item.dataset.index = index;
+
+        // Content
+        item.innerHTML = `
+            <span>[${index + 1}] ${file.name} <span style="color:#8b949e">(${(file.size/1024/1024).toFixed(2)} MB)</span></span>
+            <span class="remove-btn" onclick="removeFile(${index})">×</span>
+        `;
+
+        // --- Drag Events ---
+        
+        // 1. Start Drag
+        item.addEventListener('dragstart', (e) => {
+            dragStartIndex = +item.dataset.index;
+            item.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        });
+
+        // 2. Drag Over (Required to allow dropping)
+        item.addEventListener('dragover', (e) => {
+            e.preventDefault(); // Necessary!
+            const dragEndIndex = +item.dataset.index;
+            if(dragStartIndex !== dragEndIndex) {
+                 item.classList.add('drag-over');
+            }
+        });
+
+        // 3. Drag Leave (Cleanup visual cues)
+        item.addEventListener('dragleave', () => {
+            item.classList.remove('drag-over');
+        });
+
+        // 4. Drop (The Swap Logic)
+        item.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const dragEndIndex = +item.dataset.index;
+            swapItems(dragStartIndex, dragEndIndex);
+            item.classList.remove('drag-over');
+            item.classList.remove('dragging');
+        });
+
+        // 5. End (Cleanup if dropped outside)
+        item.addEventListener('dragend', () => {
+             item.classList.remove('dragging');
+             item.classList.remove('drag-over');
+        });
+
+        fileList.appendChild(item);
+    });
+    
+    // Ensure "Merge" button state is updated
+    checkReadyState();
+}
+
+// --- Helper Functions ---
+
+// Global scope so HTML onclick can see it
+window.removeFile = (index) => {
+    selectedFiles.splice(index, 1);
+    renderFileList();
+};
+
+function swapItems(fromIndex, toIndex) {
+    const itemToMove = selectedFiles[fromIndex];
+    
+    // Remove from old position
+    selectedFiles.splice(fromIndex, 1);
+    
+    // Insert at new position
+    selectedFiles.splice(toIndex, 0, itemToMove);
+    
+    renderFileList();
 }
 
 function checkReadyState() {
@@ -82,4 +160,5 @@ mergeBtn.addEventListener('click', async () => {
     } catch (err) {
         statusBar.innerText = `> ERROR: ${err}`;
     }
+
 });
