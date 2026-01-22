@@ -82,6 +82,45 @@
             opacity: 1;
             pointer-events: auto;
         }
+        /* Add inside <style> */
+        .file-item {
+            background: #161b22;
+            border: 1px solid #30363d;
+            padding: 8px 12px;
+            margin-bottom: 4px;
+            border-radius: 4px;
+            cursor: grab;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s, transform 0.2s;
+        }
+        
+        .file-item:active {
+            cursor: grabbing;
+        }
+        
+        .file-item.dragging {
+            opacity: 0.5;
+            background: #21262d;
+        }
+        
+        .file-item.drag-over {
+            border-color: var(--accent);
+            background: #1c2128;
+            transform: translateX(5px);
+        }
+        
+        .remove-btn {
+            color: #f85149;
+            cursor: pointer;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .remove-btn:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -105,4 +144,5 @@
 
     <script type="module" src="./main.js"></script>
 </body>
+
 </html>
