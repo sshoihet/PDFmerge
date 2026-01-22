@@ -1,4 +1,6 @@
-import { merger } from './main.js'; // Assuming the class is exported
+// main.js
+// CHANGE THIS IMPORT LINE:
+import { merger } from './pdf.engine.js'; 
 
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
@@ -8,7 +10,7 @@ const statusBar = document.getElementById('statusBar');
 
 let selectedFiles = [];
 
-// --- Worker Status Hooks ---
+// Listen to the worker via the engine instance
 merger.worker.addEventListener('message', (e) => {
     const { status, message } = e.data;
     if (status === 'loading' || status === 'working') {
@@ -19,7 +21,8 @@ merger.worker.addEventListener('message', (e) => {
     }
 });
 
-// --- Drag & Drop Logic ---
+// ... (Rest of your UI logic: dragover, drop, etc. remains exactly the same) ...
+
 dropZone.addEventListener('dragover', (e) => {
     e.preventDefault();
     dropZone.classList.add('dragover');
@@ -55,7 +58,6 @@ function renderFileList() {
 }
 
 function checkReadyState() {
-    // Only enable button if Worker is ready AND files are selected
     const isWorkerReady = statusBar.innerText.includes("READY") || statusBar.innerText.includes("WAITING");
     
     if (selectedFiles.length >= 2 && isWorkerReady) {
@@ -67,16 +69,14 @@ function checkReadyState() {
     }
 }
 
-// --- Execution ---
 mergeBtn.addEventListener('click', async () => {
     if (!mergeBtn.classList.contains('ready')) return;
 
     mergeBtn.innerText = "PROCESSING...";
-    mergeBtn.classList.remove('ready'); // Prevent double-click
+    mergeBtn.classList.remove('ready');
     
     try {
         await merger.mergeFiles(selectedFiles);
-        // Reset after download
         mergeBtn.innerText = "MERGE COMPLETE";
         setTimeout(checkReadyState, 2000);
     } catch (err) {
