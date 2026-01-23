@@ -5,7 +5,6 @@ const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
 const fileList = document.getElementById('fileList');
 const mergeBtn = document.getElementById('mergeBtn');
-const clearBtn = document.getElementById('clearBtn'); // NEW
 const statusBar = document.getElementById('statusBar');
 
 // Mode Controls
@@ -19,7 +18,7 @@ let selectedFiles = [];
 let appMode = 'MERGE';
 let dragStartIndex;
 
-// --- WORKER EVENT LISTENER (THE FIX) ---
+// --- WORKER EVENT LISTENER ---
 merger.worker.addEventListener('message', (e) => {
     const { status, message } = e.data;
     
@@ -33,13 +32,19 @@ merger.worker.addEventListener('message', (e) => {
         checkReadyState();
     }
     else if (status === 'complete') {
-        // --- SUCCESS STATE ---
+        // --- SUCCESS & AUTO-RESET ---
         statusBar.innerText = `> SYSTEM: OPERATION SUCCESSFUL. INITIATING DOWNLOAD.`;
         statusBar.style.color = '#238636'; // Green
         
         mergeBtn.innerText = "DOWNLOAD STARTED";
+        
+        // Wait 3 seconds, then wipe everything clean
         setTimeout(() => {
-            checkReadyState(); // Reset button text
+            selectedFiles = []; // Clear Data
+            renderFileList();   // Clear UI
+            statusBar.innerText = `> SYSTEM: READY FOR NEXT JOB.`;
+            statusBar.style.color = '#58a6ff';
+            checkReadyState();  // Reset Button
         }, 3000);
     }
     else if (status === 'error') {
@@ -87,29 +92,16 @@ function handleFiles(fileListObj) {
     const newFiles = Array.from(fileListObj).filter(f => f.type === 'application/pdf');
     
     if (appMode === 'SPLIT') {
-        selectedFiles = [newFiles[0]]; // Replace in Split Mode
+        selectedFiles = [newFiles[0]];
     } else {
-        selectedFiles = [...selectedFiles, ...newFiles]; // Append in Merge Mode
+        selectedFiles = [...selectedFiles, ...newFiles];
     }
     renderFileList();
 }
 
-// --- CLEAR BUTTON LOGIC ---
-clearBtn.onclick = () => {
-    selectedFiles = [];
-    renderFileList();
-};
-
 // --- RENDER & DRAG-DROP LOGIC ---
 function renderFileList() {
     fileList.innerHTML = ''; 
-
-    // Toggle Clear Button Visibility
-    if (selectedFiles.length > 0) {
-        clearBtn.style.display = 'block';
-    } else {
-        clearBtn.style.display = 'none';
-    }
 
     selectedFiles.forEach((file, index) => {
         if (!file) return;
@@ -176,7 +168,7 @@ function swapItems(fromIndex, toIndex) {
 
 // --- BUTTON STATE ---
 function checkReadyState() {
-    const isWorkerReady = statusBar.innerText.includes("READY") || statusBar.innerText.includes("WAITING") || statusBar.innerText.includes("SUCCESS");
+    const isWorkerReady = statusBar.innerText.includes("READY") || statusBar.innerText.includes("WAITING") || statusBar.innerText.includes("SUCCESS") || statusBar.innerText.includes("NEXT JOB");
     let isReady = false;
 
     if (appMode === 'MERGE') {
@@ -200,7 +192,6 @@ mergeBtn.addEventListener('click', () => {
     mergeBtn.innerText = "PROCESSING...";
     mergeBtn.classList.remove('ready');
     
-    // We don't 'await' here anymore. We trust the Event Listener above.
     if (appMode === 'MERGE') {
         merger.mergeFiles(selectedFiles);
     } else {
