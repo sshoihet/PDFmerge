@@ -1,0 +1,222 @@
+:root {
+    --bg-color: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --accent: #238636; /* GitHub Green */
+    --text: #c9d1d9;
+    --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+}
+
+.container {
+    width: 600px;
+    text-align: center;
+    padding: 20px;
+}
+
+/* --- CONTROLS & MODES --- */
+.controls {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.mode-switch {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.mode-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 12px;
+    cursor: pointer;
+    font-family: var(--mono);
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.mode-btn:hover {
+    background: var(--surface);
+}
+
+.mode-btn.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+}
+
+#jobNameInput {
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: white;
+    border-radius: 4px;
+    font-family: var(--mono);
+}
+
+#jobNameInput:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+/* --- DROP ZONE --- */
+.drop-zone {
+    background: var(--surface);
+    border: 2px dashed var(--border);
+    border-radius: 6px;
+    padding: 40px 20px;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.drop-zone.dragover {
+    border-color: var(--accent);
+    background: #1c2128;
+}
+
+/* --- FILE LIST (Professional Module Style) --- */
+.file-list {
+    margin-top: 20px;
+    text-align: left;
+    border-top: 1px solid var(--border);
+    padding-top: 20px;
+}
+
+.file-item {
+    background: #1c2128;
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    transition: all 0.15s ease-in-out;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.file-item.dragging {
+    opacity: 0.4;
+    background: #000;
+    border: 1px dashed #555;
+    box-shadow: none;
+    cursor: grabbing;
+}
+
+.file-item.drag-over {
+    border: 2px solid var(--accent);
+    transform: translateY(2px);
+    box-shadow: 0 4px 12px rgba(35, 134, 54, 0.2);
+}
+
+/* 1. Grip Handle (Up/Down Arrows) */
+.drag-handle {
+    width: 24px;
+    height: 24px;
+    margin-right: 12px;
+    opacity: 0.6;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b949e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 15l5 5 5-5'%3E%3C/path%3E%3Cpath d='M7 9l5-5 5 5'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 16px;
+    cursor: ns-resize;
+}
+
+.drag-handle:hover {
+    opacity: 1;
+    stroke: var(--text);
+}
+
+/* 2. File Info */
+.file-info {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.file-name {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text);
+    font-size: 14px;
+}
+
+.file-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: #8b949e;
+    margin-top: 2px;
+}
+
+/* 3. Delete Button (Base64 Encoded for Reliability) */
+.remove-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGI5NDllIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBvbHlsaW5lIHBvaW50cz0iMyA2IDUgNiAyMSA2Ij48L3BvbHlsaW5lPjxwYXRoIGQ9Ik0xOSA2djE0YTIgMiAwIDAgMS0yIDJIN2EyIDIgMCAwIDEtMi0yVjZtMyAwVjRhMiAyIDAgMCAxIDItMmg0YTIgMiAwIDAgMSAyIDJ2MiI+PC9wYXRoPjxsaW5lIHgxPSIxMCIgeTE9IjExIiB4Mj0iMTAiIHkyPSIxNyI+PC9saW5lPjxsaW5lIHgxPSIxNCIgeTE9IjExIiB4Mj0iMTQiIHkyPSIxNyI+PC9saW5lPjwvc3ZnPg==");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 18px;
+}
+
+.remove-btn:hover {
+    background-color: rgba(248, 81, 73, 0.15);
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZjg1MTQ5IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBvbHlsaW5lIHBvaW50cz0iMyA2IDUgNiAyMSA2Ij48L3BvbHlsaW5lPjxwYXRoIGQ9Ik0xOSA2djE0YTIgMiAwIDAgMS0yIDJIN2EyIDIgMCAwIDEtMi0yVjZtMyAwVjRhMiAyIDAgMCAxIDItMmg0YTIgMiAwIDAgMSAyIDJ2MiI+PC9wYXRoPjxsaW5lIHgxPSIxMCIgeTE9IjExIiB4Mj0iMTAiIHkyPSIxNyI+PC9saW5lPjxsaW5lIHgxPSIxNCIgeTE9IjExIiB4Mj0iMTQiIHkyPSIxNyI+PC9saW5lPjwvc3ZnPg==");
+}
+
+/* --- FOOTER UI --- */
+.status-bar {
+    margin-top: 20px;
+    padding: 10px;
+    background: #000;
+    border: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: #58a6ff;
+    text-align: left;
+}
+
+.btn-merge {
+    margin-top: 20px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    font-family: var(--mono);
+    opacity: 0.5;
+    pointer-events: none;
+    transition: opacity 0.2s;
+}
+
+.btn-merge.ready {
+    opacity: 1;
+    pointer-events: auto;
+}
