@@ -20,28 +20,40 @@ async function loadPyodideAndPackages() {
     
     // 3. Define the Python Merge Logic
     // We define this ONCE to avoid recompiling Python code on every message
+    // Inside the `pythonCode` string variable in pdf.worker.js:
+
     const pythonCode = `
-import io
-from pypdf import PdfWriter, PdfReader
-import js
-
-def process_pdfs(file_buffers):
-    merger = PdfWriter()
+    import io
+    import zipfile  # <--- NEW STANDARD LIBRARY IMPORT
+    from pypdf import PdfWriter, PdfReader
+    import js
     
-    # Iterate through the JS Proxy object (Array of Uint8Arrays)
-    for buffer in file_buffers:
-        # 'to_py()' converts JS TypedArray to a Python memory view
-        # We wrap it in BytesIO to make it file-like
-        pdf_stream = io.BytesIO(buffer.to_py().tobytes())
-        merger.append(pdf_stream)
-
-    output = io.BytesIO()
-    merger.write(output)
+    # ... (Keep existing process_pdfs function) ...
     
-    # Get the raw bytes
-    result_bytes = output.getvalue()
-    return result_bytes
-`;
+    def process_split(file_buffer, job_name):
+        # Convert JS buffer to Python BytesIO
+        input_stream = io.BytesIO(file_buffer.to_py().tobytes())
+        reader = PdfReader(input_stream)
+        
+        # Prepare the ZIP container in memory
+        zip_buffer = io.BytesIO()
+        
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+            # Iterate over every page
+            for i, page in enumerate(reader.pages):
+                writer = PdfWriter()
+                writer.add_page(page)
+                
+                # Write page to memory
+                page_bytes = io.BytesIO()
+                writer.write(page_bytes)
+                
+                # Add to zip: "jobname_1.pdf"
+                filename = f"{job_name}_{i+1}.pdf"
+                zf.writestr(filename, page_bytes.getvalue())
+                
+        return zip_buffer.getvalue()
+    `;
     pyodide.runPython(pythonCode);
 
     self.postMessage({ status: 'ready', message: 'Ready to Merge' });
@@ -80,3 +92,4 @@ self.onmessage = async (event) => {
         self.postMessage({ status: 'error', error: error.message });
     }
 };
+
