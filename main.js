@@ -173,7 +173,7 @@ function checkReadyState() {
 
     if (appMode === 'MERGE') {
         isReady = selectedFiles.length >= 2 && isWorkerReady;
-        if (isReady) mergeBtn.innerText = "MERGE_PDFS()";
+        if (isReady) mergeBtn.innerText = "MERGE PDFS";
         else mergeBtn.innerText = "ADD AT LEAST 2 FILES";
     } else {
         isReady = selectedFiles.length === 1 && isWorkerReady;
@@ -199,3 +199,4 @@ mergeBtn.addEventListener('click', () => {
         merger.splitPDF(selectedFiles[0], jobName);
     }
 });
+
