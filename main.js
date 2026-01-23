@@ -1,15 +1,24 @@
-// main.js
-// CHANGE THIS IMPORT LINE:
 import { merger } from './pdf.engine.js'; 
 
+// --- DOM ELEMENTS ---
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
 const fileList = document.getElementById('fileList');
 const mergeBtn = document.getElementById('mergeBtn');
 const statusBar = document.getElementById('statusBar');
 
-let selectedFiles = [];
+// Mode Controls
+const btnModeMerge = document.getElementById('btnModeMerge');
+const btnModeSplit = document.getElementById('btnModeSplit');
+const splitControls = document.getElementById('splitControls');
+const jobNameInput = document.getElementById('jobNameInput');
 
+// --- STATE ---
+let selectedFiles = [];
+let appMode = 'MERGE'; // Default State
+let dragStartIndex;
+
+// --- INITIALIZATION ---
 // Listen to the worker via the engine instance
 merger.worker.addEventListener('message', (e) => {
     const { status, message } = e.data;
@@ -21,7 +30,30 @@ merger.worker.addEventListener('message', (e) => {
     }
 });
 
-// ... (Rest of your UI logic: dragover, drop, etc. remains exactly the same) ...
+// --- MODE SWITCHING LOGIC ---
+function setMode(mode) {
+    appMode = mode;
+    selectedFiles = []; // Clear files on switch to safety
+    renderFileList();
+    
+    if (mode === 'SPLIT') {
+        btnModeSplit.classList.add('active');
+        btnModeMerge.classList.remove('active');
+        splitControls.style.display = 'block';
+        mergeBtn.innerText = "SELECT A PDF";
+    } else {
+        btnModeMerge.classList.add('active');
+        btnModeSplit.classList.remove('active');
+        splitControls.style.display = 'none';
+        mergeBtn.innerText = "ADD FILES";
+    }
+    checkReadyState();
+}
+
+btnModeMerge.onclick = () => setMode('MERGE');
+btnModeSplit.onclick = () => setMode('SPLIT');
+
+// --- DRAG & DROP UI LOGIC ---
 
 dropZone.addEventListener('dragover', (e) => {
     e.preventDefault();
@@ -46,28 +78,29 @@ fileInput.addEventListener('change', (e) => {
 
 function handleFiles(fileListObj) {
     const newFiles = Array.from(fileListObj).filter(f => f.type === 'application/pdf');
-    selectedFiles = [...selectedFiles, ...newFiles];
+    
+    if (appMode === 'SPLIT') {
+        // Split mode only allows ONE file. Overwrite logic.
+        selectedFiles = [newFiles[0]];
+    } else {
+        // Merge mode appends files
+        selectedFiles = [...selectedFiles, ...newFiles];
+    }
+    
     renderFileList();
-    checkReadyState();
 }
 
-// --- Updated Render Logic ---
-
-let dragStartIndex;
-
-// In main.js
-
 function renderFileList() {
-    fileList.innerHTML = ''; // Clear current list
+    fileList.innerHTML = ''; 
 
     selectedFiles.forEach((file, index) => {
+        if (!file) return; // Safety check
+
         const item = document.createElement('div');
         item.classList.add('file-item');
         item.setAttribute('draggable', 'true');
         item.dataset.index = index;
 
-        // --- NEW HTML STRUCTURE ---
-        // Note: The onclick lives on the container div for the remove button now
         item.innerHTML = `
             <div class="drag-handle"></div>
             <div class="file-info">
@@ -76,16 +109,12 @@ function renderFileList() {
             </div>
             <div class="remove-btn" onclick="window.removeFile(${index})" title="Remove file"></div>
         `;
-        // ---------------------------
 
-
-        // --- Drag Events (These are unchanged from previous version) ---
+        // Drag Events
         item.addEventListener('dragstart', (e) => {
             dragStartIndex = +item.dataset.index;
-            // Small delay so the element isn't instantly hidden
             setTimeout(() => item.classList.add('dragging'), 0);
             e.dataTransfer.effectAllowed = 'move';
-             // Optional: set a custom drag image if you want to get fancy later
         });
 
         item.addEventListener('dragover', (e) => {
@@ -96,9 +125,7 @@ function renderFileList() {
             }
         });
 
-        item.addEventListener('dragleave', () => {
-            item.classList.remove('drag-over');
-        });
+        item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
 
         item.addEventListener('drop', (e) => {
             e.preventDefault();
@@ -119,9 +146,7 @@ function renderFileList() {
     checkReadyState();
 }
 
-// --- Helper Functions ---
-
-// Global scope so HTML onclick can see it
+// --- HELPERS ---
 window.removeFile = (index) => {
     selectedFiles.splice(index, 1);
     renderFileList();
@@ -129,28 +154,30 @@ window.removeFile = (index) => {
 
 function swapItems(fromIndex, toIndex) {
     const itemToMove = selectedFiles[fromIndex];
-    
-    // Remove from old position
     selectedFiles.splice(fromIndex, 1);
-    
-    // Insert at new position
     selectedFiles.splice(toIndex, 0, itemToMove);
-    
     renderFileList();
 }
 
 function checkReadyState() {
     const isWorkerReady = statusBar.innerText.includes("READY") || statusBar.innerText.includes("WAITING");
-    
-    if (selectedFiles.length >= 2 && isWorkerReady) {
-        mergeBtn.innerText = "MERGE_PDFS()";
-        mergeBtn.classList.add('ready');
-    } else if (selectedFiles.length < 2) {
-        mergeBtn.innerText = "ADD AT LEAST 2 FILES";
-        mergeBtn.classList.remove('ready');
+    let isReady = false;
+
+    if (appMode === 'MERGE') {
+        isReady = selectedFiles.length >= 2 && isWorkerReady;
+        if (isReady) mergeBtn.innerText = "MERGE_PDFS()";
+        else mergeBtn.innerText = "ADD AT LEAST 2 FILES";
+    } else {
+        isReady = selectedFiles.length === 1 && isWorkerReady;
+        if (isReady) mergeBtn.innerText = "SPLIT PDF";
+        else mergeBtn.innerText = "SELECT SINGLE PDF";
     }
+
+    if (isReady) mergeBtn.classList.add('ready');
+    else mergeBtn.classList.remove('ready');
 }
 
+// --- EXECUTION ---
 mergeBtn.addEventListener('click', async () => {
     if (!mergeBtn.classList.contains('ready')) return;
 
@@ -158,12 +185,17 @@ mergeBtn.addEventListener('click', async () => {
     mergeBtn.classList.remove('ready');
     
     try {
-        await merger.mergeFiles(selectedFiles);
-        mergeBtn.innerText = "MERGE COMPLETE";
+        if (appMode === 'MERGE') {
+            await merger.mergeFiles(selectedFiles);
+        } else {
+            const jobName = jobNameInput.value.trim() || "split_files";
+            await merger.splitPDF(selectedFiles[0], jobName);
+        }
+        
+        mergeBtn.innerText = "OPERATION COMPLETE";
         setTimeout(checkReadyState, 2000);
     } catch (err) {
         statusBar.innerText = `> ERROR: ${err}`;
+        console.error(err);
     }
-
 });
-
