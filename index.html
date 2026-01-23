@@ -30,7 +30,10 @@
         <div id="fileList" class="file-list">
             </div>
 
-        <button id="mergeBtn" class="btn-merge">SYSTEM INITIALIZING...</button>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button id="mergeBtn" class="btn-merge" style="flex-grow: 1;">SYSTEM INITIALIZING...</button>
+                <button id="clearBtn" class="mode-btn" style="border-color: #f85149; color: #f85149; display: none;">CLEAR ALL</button>
+            </div>
 
         <div id="statusBar" class="status-bar">
             > SYSTEM: Booting Web Worker...
@@ -40,3 +43,4 @@
     <script type="module" src="./main.js"></script>
 </body>
 </html>
+
